@@ -4,6 +4,9 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 let mongoMemoryServer: MongoMemoryServer | null = null;
 
 export const connectDB = async (): Promise<void> => {
+  if (mongoose.connection.readyState >= 1) {
+    return;
+  }
   try {
     let mongoUri = process.env.MONGODB_URI;
 
@@ -18,7 +21,6 @@ export const connectDB = async (): Promise<void> => {
     console.log('🌱 Connected to MongoDB successfully.');
   } catch (error) {
     console.error('❌ MongoDB Connection Error:', error);
-    process.exit(1);
   }
 };
 

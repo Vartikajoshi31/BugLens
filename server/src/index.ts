@@ -67,20 +67,36 @@ app.get('/api/health', (_req, res) => {
 // Global Error Handler
 app.use(errorHandler);
 
-// Start Server
-const startServer = async () => {
-  await connectDB();
-
-  // Auto-seed if database has no bugs
-  const count = await Bug.countDocuments({});
-  if (count === 0) {
-    console.log('🌱 Database empty. Executing auto-seed for immediate demo ready state...');
-    await seedDatabase();
+// DB Connection Middleware for Serverless
+app.use(async (_req, _res, next) => {
+  try {
+    await connectDB();
+    const count = await Bug.countDocuments({});
+    if (count === 0) {
+      await seedDatabase();
+    }
+  } catch (err) {
+    console.error('Database middleware error:', err);
   }
+  next();
+});
 
-  server.listen(PORT, () => {
-    console.log(`🚀 BugLens Express Server running on http://localhost:${PORT}`);
-  });
-};
+// Start Server in Standalone Mode (outside Vercel)
+if (!process.env.VERCEL) {
+  const startServer = async () => {
+    await connectDB();
+    const count = await Bug.countDocuments({});
+    if (count === 0) {
+      console.log('🌱 Database empty. Executing auto-seed for immediate demo ready state...');
+      await seedDatabase();
+    }
 
-startServer();
+    server.listen(PORT, () => {
+      console.log(`🚀 BugLens Express Server running on http://localhost:${PORT}`);
+    });
+  };
+
+  startServer();
+}
+
+export default app;
